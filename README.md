@@ -116,15 +116,20 @@ correct Evil state.
 
 **Return Value:** `nil`
 
-**Description:** Similar to `evil-god-toggle-stop-god-state-maybe-visual` but
-specifically for exiting `god-once` state. Uses `evil-god-toggle-persist-visual-once`
-setting instead of `evil-god-toggle-persist-visual`. If `evil-god-toggle-persist-visual-once`
-is set to `'follow`, it inherits the behavior from `evil-god-toggle-persist-visual`.
+**Description:** Exits God-once and chooses the destination Evil state.
+If a characterwise region is active and the effective persist setting
+(determined by `evil-god-toggle-persist-visual-once`) is `always` or `to-evil`,
+it stashes the region bounds/orientation and restores visual selection;
+otherwise it falls back to the specified `alternate-target`.
+When `evil-god-toggle-persist-visual-once` is set to `follow`, it uses
+the value of `evil-god-toggle-persist-visual` instead.
 
-**Intended Purpose:** Internal function called automatically when exiting god-once state.
-Handles visual persistence according to the god-once specific settings.
+**Intended Purpose:** The recommended exit entry point for god-once
+state keybindings, handling visual persistence and landing in the
+correct Evil state.
 
 **Respects `evil-god-toggle-persist-visual-once`**.
+
 
 
 ### `evil-god-toggle-god-toggle`
@@ -279,23 +284,15 @@ customization group.
 -   **Type:**
     `(choice (const :tag "Always" always) (const :tag "To God" to-god) (const :tag "To Evil" to-evil) (const :tag "Follow" follow) (const :tag "Never" nil))`
 -   **Default:** `follow`
--   **Description:** Controls visual selection persistence specifically for `god-once` state transitions.
-    -   `always` -- keep the region on both entry and exit from god-once.
-    -   `to-god` -- preserve only when entering god-once.
-    -   `to-evil` -- preserve only when returning from god-once.
-    -   `follow` -- inherit the behavior from `evil-god-toggle-persist-visual`.
+-   **Description:** Controls whether and when an existing visual
+    selection or active region is preserved when toggling between Evil and God-once states.
+    -   `follow` -- use the value of `evil-god-toggle-persist-visual`.
+    -   `always` -- keep the region on both entry and exit.
+    -   `to-god` -- preserve only when entering God-once.
+    -   `to-evil` -- preserve only when returning to Evil.
     -   `nil` -- never preserve the region.
 
-### `evil-god-toggle-target-state-alist`
-
--   **Type:** `(alist :key-type symbol :value-type symbol)`
--   **Default:** `nil`
--   **Description:** Alist mapping previous Evil states to target states when exiting `god-once`.
-    Each entry is `(PREVIOUS-STATE . TARGET-STATE)`. If a previous state is not found in this alist,
-    it will transition to that state directly. 
-    
-    Example: `'((insert . normal) (replace . normal))` would transition to normal state 
-    when exiting god-once from insert or replace states, but preserve other transitions.
+    *Note*: This only works with characterwise visual selection/active regions, not linewise selections or blockwise.
 
 ## Depends-On
 
@@ -458,7 +455,7 @@ character after entering the state. Convenience functions
 
 ## Version/License
 
-- **Version:** 1.1.0
+- **Version:** 1.2.0
 - **Author:** [Jordan Mandel](https://github.com/jam1015/)
 - **License:** GPL-3.0-or-later
 
