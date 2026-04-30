@@ -134,9 +134,10 @@ Creates `god-mode' states for Evil."
 
 (defun evil-god-toggle--start-hook-fun ()
   "Run before entering `evil-god-state'."
-    (evil-god-toggle--remove-visual-hooks)
-  ;; either global or local God
-  (evil-god-toggle--enable-god))
+  (evil-god-toggle--remove-visual-hooks)
+  (evil-god-toggle--enable-god)
+  (evil-normalize-keymaps))
+
 
 (defun evil-god-toggle--stop-hook-fun ()
   "Run before exiting `evil-god-state'."
@@ -157,10 +158,10 @@ Creates `god-mode' states for Evil."
 
 (defun evil-god-toggle--once-start-hook-fun ()
   "Run before entering `evil-god-once-state'."
- (evil-god-toggle--remove-visual-hooks)
-  ;; either global or local God
+  (evil-god-toggle--remove-visual-hooks)
   (evil-god-toggle--add-add-exit-once)
-  (evil-god-toggle--enable-god))
+  (evil-god-toggle--enable-god)
+  (evil-normalize-keymaps))
 
 (defun evil-god-toggle--once-stop-hook-fun ()
   "Run before exiting `evil-god-once-state'."
@@ -191,7 +192,11 @@ Creates `god-mode' states for Evil."
   (evil-god-toggle--restore-visual-hooks))
 
 
-
+;; Make god-local-mode-map intercept Evil's state keymaps while in god/god-once,
+;; so multi-key prefix sequences (e.g. C-x 8 P) are not eaten by Evil bindings
+;; like `evil-paste-before' before god-mode finishes reading the sequence.
+(evil-make-intercept-map god-local-mode-map 'god)
+(evil-make-intercept-map god-local-mode-map 'god-once)
 
 ;;;###autoload
 (defun evil-god-toggle-god-toggle ()
