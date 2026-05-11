@@ -401,9 +401,10 @@ so that exiting visual returns to normal instead of a god state."
     (god-local-mode 1))
 
 (defun evil-god-toggle--fix-last-command ()
-"Internal: Restore `last-command` captured before entering God state."
-        (setq last-command evil-god-toggle--last-command)
-        (remove-hook 'pre-command-hook #'evil-god-toggle--fix-last-command t))
+  "Internal: Restore `last-command' and `last-repeatable-command' captured before entering God state."
+  (setq last-command evil-god-toggle--last-command)
+  (setq last-repeatable-command evil-god-toggle--last-command)
+  (remove-hook 'pre-command-hook #'evil-god-toggle--fix-last-command t))
 
 (defun evil-god-toggle--switch-state-maybe-restore-region-once (next-state-fn)
   "Switch to NEXT-STATE-FN and optionally restore region if in visual mode.

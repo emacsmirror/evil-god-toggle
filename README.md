@@ -154,9 +154,9 @@ Should be bound to `god` and `god-off` states.
 
 **Return Value:** `nil`
 
-**Description:** Saves the current `last-command`, adds a transient
-hook (to restore `last-command`), enables God (buffer-local), and 
-enters `evil-god-state`. Optionally restores a characterwise
+**Description:** Saves the current `last-command` and
+`last-repeatable-command`, adds a transient hook (to restore both),
+enables God (buffer-local), and enters `evil-god-state`. Optionally restores a characterwise
 visual region on entry if `evil-god-toggle-persist-visual` permits.
 If `move-forward` is non-nil, moves cursor one character forward after
 entering the state. This is useful when at the end of a line in Evil
@@ -221,9 +221,9 @@ the actual state switch when leaving God.
 **Return Value:** `nil` (or error if already in God state or minibuffer)
 
 **Description:** Enters a temporary God state for exactly one non-prefix
-command. Saves `last-command`, installs `pre-command-hook` and
-`post-command-hook` to restore the previous Evil state after that
-command, and enables God. If `move-forward` is non-nil, moves cursor
+command. Saves `last-command` and `last-repeatable-command`, installs
+`pre-command-hook` and `post-command-hook` to restore the previous Evil
+state after that command, and enables God. If `move-forward` is non-nil, moves cursor
 one character forward after entering the state. Signals an error if
 already in `god` or `god-once` or if invoked from the minibuffer.
 
