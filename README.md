@@ -455,7 +455,7 @@ character after entering the state. Convenience functions
 
 ## Version/License
 
-- **Version:** 1.2.0
+- **Version:** 1.2.1
 - **Author:** [Jordan Mandel](https://github.com/jam1015/)
 - **License:** GPL-3.0-or-later
 
