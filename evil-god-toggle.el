@@ -279,16 +279,19 @@ If MOVE-FORWARD is non-nil, move cursor one character forward after entering."
 
 
 ;;;###autoload
-(defun evil-god-toggle-execute-in-god-off-state ()
+(defun evil-god-toggle-execute-in-god-off-state (&optional move-forward)
   "Exit God mode (force `god-off'), optionally restoring visual selection.
-If called from the minibuffer, signal a user-error."
-  (interactive)
+If called from the minibuffer, signal a user-error.
+If MOVE-FORWARD is non-nil, move cursor one character forward after entering."
+  (interactive "P")
   (if (minibufferp)
       (user-error "Cannot enter `god-off' mode from minibuffer")
     ;; original behavior
     (evil-god-toggle--add-fix-last)
     (setq evil-god-toggle--last-command last-command)
-    (evil-god-toggle--switch-state-maybe-restore-region 'evil-god-off-state)))
+    (evil-god-toggle--switch-state-maybe-restore-region 'evil-god-off-state)
+    (when move-forward
+      (forward-char 1))))
 
 
 ;;;###autoload
