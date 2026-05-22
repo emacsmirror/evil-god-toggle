@@ -85,6 +85,12 @@ Execute a single command in god mode and then switch back to the previous state
 of Evil.
 
 
+### `god-off-once`
+
+Enter `god-off` state for exactly one command, then automatically return to the
+previous Evil state. Behaves identically to `god-once` in terms of the
+single-command-then-exit mechanism, but with god disabled — useful for a quick
+Emacs-native keystroke without committing to a persistent `god-off` session.
 
 
 ## User-facing Functions
@@ -182,17 +188,19 @@ the end of lines.
 
 ### `evil-god-toggle-execute-in-god-off-state`
 
-**Arguments:** None (interactive)
+**Arguments:** `&optional move-forward` *(interactive, prefix argument)*
 
 **Return Value:** `nil`
 
 **Description:** Saves the current `last-command`, adds transient hooks,
 disables God while entering the `god-off` state, and then
 optionally restores any active visual region according to
-`evil-god-toggle-persist-visual`.
+`evil-god-toggle-persist-visual`. If `move-forward` is non-nil, moves
+cursor one character forward after entering the state.
 
 **Intended Purpose:** Provide a clean "God-off" state (akin to Emacs
-state) that can be toggled back into God.
+state) that can be toggled back into God, with optional cursor
+advancement for end-of-line scenarios.
 
 ### `evil-god-toggle-stop-execute-in-god-state`
 
@@ -246,6 +254,40 @@ moves the cursor one character forward. Equivalent to calling
 **Intended Purpose:** Provide a dedicated function for one-shot God
 mode with cursor advancement, useful for keybindings when working at
 the end of lines.
+
+### `evil-god-toggle-off-once`
+
+**Arguments:** `&optional move-forward` *(interactive, prefix argument)*
+
+**Return Value:** `nil` (or error if already in `god-off` or `god-off-once` state, or in minibuffer)
+
+**Description:** Enters `god-off-once` state for exactly one non-prefix command,
+then automatically returns to the previous Evil state. Saves `last-command` and
+`last-repeatable-command`, installs `pre-command-hook` and `post-command-hook`
+to restore the previous Evil state after that command, and disables god-mode for
+the duration. If `move-forward` is non-nil, moves cursor one character forward
+after entering the state. Signals an error if already in `god-off` or
+`god-off-once`, or if invoked from the minibuffer.
+
+**Intended Purpose:** Provide quick, one-shot access to plain Emacs editing
+(god disabled) without needing to toggle back manually, with optional cursor
+advancement for end-of-line scenarios.
+
+
+### `evil-god-toggle-off-once-forward`
+
+**Arguments:** None (interactive)
+
+**Return Value:** `nil`
+
+**Description:** Convenience function that enters God-off-once state and
+moves the cursor one character forward. Equivalent to calling
+`evil-god-toggle-off-once` with a non-nil argument.
+
+**Intended Purpose:** Provide a dedicated function for one-shot God-off
+mode with cursor advancement, useful for keybindings when working at
+the end of lines.
+
 
 ### `evil-god-toggle-bail`
 
@@ -434,7 +476,8 @@ the current state:
 
 -   **god state:** `" <G> "`
 -   **god-once state:** `" <G (once)> "`
--   **god-off state:** `" <G (off)> "` 
+-   **god-off state:** `" <G (off)> "`
+-   **god-off-once state:** `" <G (off once)> "`
 
 These tags appear in the mode line alongside other Evil state indicators
 and help you identify which god-related state is currently active.
@@ -446,16 +489,18 @@ while Emacs (and God mode) allows the cursor to be positioned AFTER the
 last character. When entering God or God-once states from the end of a
 line, you may want to access that extra position.
 
-The functions `evil-god-toggle-execute-in-god-state` and
-`evil-god-toggle-once` accept an optional `move-forward` argument (via
-prefix argument when called interactively) to advance the cursor one
+The functions `evil-god-toggle-execute-in-god-state`,
+`evil-god-toggle-execute-in-god-off-state`, `evil-god-toggle-once`, and
+`evil-god-toggle-off-once` all accept an optional `move-forward` argument
+(via prefix argument when called interactively) to advance the cursor one
 character after entering the state. Convenience functions
-`evil-god-toggle-execute-in-god-state-forward` and
-`evil-god-toggle-once-forward` are also provided for direct keybinding.
+`evil-god-toggle-execute-in-god-state-forward`,
+`evil-god-toggle-once-forward`, and `evil-god-toggle-off-once-forward`
+are also provided for direct keybinding.
 
 ## Version/License
 
-- **Version:** 1.2.1
+- **Version:** 1.3.0
 - **Author:** [Jordan Mandel](https://github.com/jam1015/)
 - **License:** GPL-3.0-or-later
 

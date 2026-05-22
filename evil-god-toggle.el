@@ -3,7 +3,7 @@
 ;; Copyright (C) 2025 Jordan Mandel
 ;; Author: Jordan Mandel <jordan.mandel@live.com>
 ;; Created: 2025-04-22
-;; Version: 1.2.1
+;; Version: 1.3.0
 ;; Package-Requires: ((emacs "28.1") (evil "1.0.8") (god-mode "2.12.0"))
 ;; Keywords: convenience, emulation, evil, god-mode
 ;; Homepage: https://github.com/jam1015/evil-god-toggle
@@ -35,6 +35,7 @@
 ;; - `god': Full persistent God mode.
 ;; - `god-once': Enter God mode for one command, then return to Evil.
 ;; - `god-off': Like evil's built-in Emacs state.  Easy to switch to and from.
+;; - `god-off-once': Enter god-off for one command, then return to previous state.
 ;; Ideal for users blending Emacs and Vim-style modal editing.
 ;;
 ;;; Code:
@@ -191,6 +192,25 @@ Creates `god-mode' states for Evil."
   ;; same cleanup for God-off exit
   (evil-god-toggle--restore-visual-hooks))
 
+;; god-off-once and hooks ;;;;;;;;;;;;;;;;;;;;;;;;
+
+(evil-define-state god-off-once
+  "God state (off, once)." :tag " <G (off once)> "
+  :message "-- GOD MODE (OFF, once) --"
+  :entry-hook  evil-god-toggle--off-once-start-hook-fun
+  :exit-hook   evil-god-toggle--off-once-stop-hook-fun
+  :input-method t :intercept-esc nil)
+
+(defun evil-god-toggle--off-once-start-hook-fun ()
+  "Run before entering `evil-god-off-once-state'."
+  (evil-god-toggle--remove-visual-hooks)
+  (evil-god-toggle--add-add-exit-off-once)
+  (evil-god-toggle--disable-god))
+
+(defun evil-god-toggle--off-once-stop-hook-fun ()
+  "Run before exiting `evil-god-off-once-state'."
+  (evil-god-toggle--restore-visual-hooks)
+  (evil-god-toggle--remove-transient-hooks))
 
 ;; Make god-local-mode-map intercept Evil's state keymaps while in god/god-once,
 ;; so multi-key prefix sequences (e.g. C-x 8 P) are not eaten by Evil bindings
@@ -295,6 +315,36 @@ If MOVE-FORWARD is non-nil, move cursor one character forward after entering."
 
 
 ;;;###autoload
+(defun evil-god-toggle-off-once (&optional move-forward)
+  "Enter god-off-once state for exactly one command, then return to previous state.
+If MOVE-FORWARD is non-nil, move cursor one character forward after entering.
+If already in `god-off-once' or `god-off', signal a user-error."
+  (interactive "P")
+  (cond
+   ((minibufferp)
+    (user-error "Cannot enter god-off-once mode from minibuffer"))
+   ((eq evil-state 'god-off-once)
+    (user-error "Already in god-off-once state"))
+   ((eq evil-state 'god-off)
+    (user-error "Already in god-off state"))
+   (t (evil-god-toggle--execute-in-god-off-once-state move-forward))))
+
+(defun evil-god-toggle--execute-in-god-off-once-state (&optional move-forward)
+  "Go into God-off-once state.
+If MOVE-FORWARD is non-nil, move cursor one character forward after entering."
+  (setq evil-god-toggle--last-command last-command)
+  (evil-god-toggle--add-fix-last)
+  (evil-god-off-once-state)
+  (when move-forward
+    (forward-char 1)))
+
+;;;###autoload
+(defun evil-god-toggle-off-once-forward ()
+  "Enter God-off-once state and move forward one character."
+  (interactive)
+  (evil-god-toggle-off-once t))
+
+;;;###autoload
 (defun evil-god-toggle-stop-god-state-maybe-visual (alternate-target)
   "From God, toggle back into Evil, choosing appropriate state.
 Restore visual or going to state specified by `ALTERNATE-TARGET'.
@@ -362,7 +412,9 @@ it it respects `evil-god-toggle-persist-visual'"
     (with-current-buffer buf
         (remove-hook 'pre-command-hook #'evil-god-toggle--fix-last-command t)
         (remove-hook 'post-command-hook #'evil-god-toggle--exit-once t)
-        (remove-hook 'post-command-hook #'evil-god-toggle--add-exit-once t))))
+        (remove-hook 'post-command-hook #'evil-god-toggle--add-exit-once t)
+        (remove-hook 'post-command-hook #'evil-god-toggle--exit-off-once t)
+        (remove-hook 'post-command-hook #'evil-god-toggle--add-exit-off-once t))))
 
 (defun evil-god-toggle--add-fix-last ()
   "Add `evil-god-toggle--fix-last-command` to `pre-command-hook`."
@@ -377,12 +429,20 @@ it it respects `evil-god-toggle-persist-visual'"
   "Add hook that adds `evil-god-toggle--exit-once` to `post-command-hook`."
   (add-hook 'post-command-hook #'evil-god-toggle--add-exit-once nil t))
 
+(defun evil-god-toggle--add-exit-off-once ()
+  "Add `evil-god-toggle--exit-off-once` to `post-command-hook`."
+  (add-hook 'post-command-hook #'evil-god-toggle--exit-off-once nil t))
+
+(defun evil-god-toggle--add-add-exit-off-once ()
+  "Add hook that adds `evil-god-toggle--exit-off-once` to `post-command-hook`."
+  (add-hook 'post-command-hook #'evil-god-toggle--add-exit-off-once nil t))
+
 (defun evil-god-toggle--check-and-update-previous-state-visual ()
   "Set the previous Evil state to `normal' if it was `god' or `god-once' upon entering `visual'.
 When Evil transitions into `visual' state from `god' or `god-once', it may
 incorrectly keep those as the previous state. This function resets it to `normal'
 so that exiting visual returns to normal instead of a god state."
-  (when (memq evil-previous-state '(god god-once))
+  (when (memq evil-previous-state '(god god-once god-off-once))
     (setq evil-previous-state 'normal)))
 
 
@@ -531,6 +591,23 @@ return its mapped value; otherwise return PREVIOUS-STATE itself."
            (evil-god-toggle-stop-god-state-maybe-visual-once target-state)
            (evil-normalize-keymaps)))))))
 
+
+
+(defun evil-god-toggle--exit-off-once ()
+  "Exit `god-off-once' state, return to previous Evil state, or `normal' if ambiguous."
+  (if (not (eq evil-state 'god-off-once))
+      (remove-hook 'post-command-hook #'evil-god-toggle--exit-off-once t)
+    (when (and (not (minibufferp))
+               (not (memq this-command '(evil-god-toggle-off-once evil-god-off-once-state)))
+               (not prefix-arg))
+      (run-with-idle-timer
+       0 nil
+       (lambda ()
+         (let ((target-state (evil-god-toggle--determine-target-state evil-previous-state)))
+           (when (memq target-state '(god god-once god-off god-off-once nil))
+             (setq target-state 'normal))
+           (evil-god-toggle-stop-execute-in-god-state target-state)
+           (evil-normalize-keymaps)))))))
 
 
 (provide 'evil-god-toggle)
